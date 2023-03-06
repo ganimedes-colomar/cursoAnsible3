@@ -1,0 +1,156 @@
+# Podemos poner comentarios: Al empezar un texto con cuadradito! ALELUYA !!!!
+# Dentro de un fichero YAML podemos tener múltiples documentos YAML. ALELUYA !
+
+# Cuando comienza un documento usamos 
+---
+# Esa marca implica el comienzo de un documento. Se puede obviar en el primer documento
+# Cuando acaba un documento YAML usamos: 
+...
+# Esa marca es opcional y poco habitual. Es MUY importante cuando mandamos datos en YAML a través de red... en un socket.
+# En fichero no es habitual encontrarlo... ni recomendable su uso. 
+# Siempre hay "frikis" que lo usan.
+---
+# Un documento YAML es UN NODO
+# Nodo es un dato
+# Hay 2 tipos de (datos)nodos en YAML: ESCALARES y de COLECCION
+---
+# Escalares: Son datos sueltos. Tipos simples.
+---
+# Números:
+3
+---
+3.18
+--- 
+-.inf
+---
+.nan
+---
+# Valores lógicos:
+true # TRUE True
+---
+false # FALSE False
+--- 
+# OJO:
+yes # YES Yes
+y
+no  # NO No
+n
+on
+off
+# Todos estos eran considerados valores lógico VALIDOS en YAML 1.1
+# Desde YAML 1.2 YA NO SE ADMITEN.
+# Muchos parsers (los programas que leen YAML) siguen admitiendo estas sintaxis que YA NO SON VALIDAS segñun el estandar.
+---
+# Textos
+Ho"la 'mi amigo
+
+Si sigo escribiendo aquí
+---
+"Ho\"la 'mi #am\n\t\\igo"
+---
+'Ho"la ''mi #am\n\t\\igo'
+---
+# En definitiva en YAML:
+# - No usamos comillas para textos.
+# - A no ser que tenga que poner caracteres raros: # ' " \n \t \'
+# - En ese caso, optaré por encerrar el texto en comillas simples o dobles
+#   Según me sea más cómodo
+
+# Todas estas sintaxis anteriores las usaremos cuando NO NECESITE SALTOS DE LINEA
+# Cuando hagan falta saldos de linea, o textos más complejos,
+# YAML me ofrece OTRAS 2 sintaxis adicionales:
+---
+# Sintaxis LITERAL:
+|+5
+     empiezo a escribir mi texto
+     Que puede ocupar varias lineas
+     Y contener # ", ', \, :
+     
+     Y los saltos de linea que quiera
+
+
+
+
+
+---
+# Sintaxis FOLDED:
+>
+    docker
+        container create
+        --name="micontenedor"
+        --rm
+        -p 8080:80
+        nginx:latest
+
+---
+~ # Valor nulo
+---
+# Nodos (datos) de tipo colección: 
+# Listas ordenadas                                                              √
+# Listas desordenadas                               
+# Mapas ordenados                                   
+# Mapas desordenados.                                                           √
+---
+# Lista ordenada:
+# Es una secuencia ordenada de NODOS.
+# Hay 2 sintaxis diferentes para listas ordenadas
+# La más usada y RECOMENDADA: Comenzar cada nodo de la lista por un guión: -
+- item 1
+- item 2
+- item 3
+---
+- item1
+- 2
+- true
+---
+- item 1
+- item 2
+- 
+                         - - subitem 1
+                           - subitem 2
+- 
+ - subitem 1
+ - subitem 2
+- - subitem 1
+  - subitem 2
+---
+# Hay una segunda sintaxis para listas:
+[item1, item2, item3] # Esta sintaxis no está recomendada
+# Entre otras cosas, porque el documento acabará en un SCM, y los SCM (como git) controlan cambios 
+# a nivel de linea de código. Si cambiará un item de esa lista, git no sería capaz de decirme CUAL ha cambiado
+# solo que la linea ha cambiado... y eso no nos gusta.
+---
+- item 1
+- item 2
+- item 3
+---
+# Solo hay un caso de uso de esa sintaxis habitual... y recomendado:
+[] # Lista vacia
+---
+# MApas desordenados
+# Es un conjunto de nodos, identificados por una clave:
+clave: valor
+clave2: valor2
+---
+usuario:
+    nombre: Ivan
+    edad: 44
+    email: 
+        - ivan.osuna.ayuste@gmail.com
+        - ivancini@gmail.com
+---
+# Este tipo de docuumentos es muy habitual por ejemplo en KUBERNETES.
+# En cambio en Ansible, los documentos son siempre LISTAS !
+---
+clave: valor
+clave2: valor2
+---
+clave2: valor2
+clave: valor
+# Estos dos documentos anteriores son IGUALES entre SI!... ya que estos mapas son DESORDENADOS,
+# no se considera el orden de sus valores.
+---
+# Una sintaxis alternativa sería:
+{ clave2: valor2, clave: valor } # Esta sintaxis no está recomendada... salvo que quiera un mapa vacio:
+---
+{}

@@ -1,0 +1,153 @@
+# Esto es lo que llamamos un playbook
+# PLAY BOOK: Libro de JUGADAS
+# Sabeis que va a contener este fichero? Muchas JUGADAS (Plays)
+# Cada play irá represnetado como un item de una lista.
+# El playbook va a ser una lista de PLAYs
+#- # Play 1
+#
+#- # Play 2
+#---
+# En un play definiremos:
+# - Las tareas que queremos realizar
+# - Los entornos sobre los que realizaremos esas tareas
+# - Otros datos, relativos a parametrizaciones con respecto a la forma de ejecutar esas tareas
+
+- # Play 1. El play va a contener un diccionario YAML, con unas claves muy concretas, definidas en el esquema YAML de Ansible
+    hosts: localhost # Los entornos sobre los que quiero que se ejecute este play
+    
+    gather_facts: true # Esta es la primera tarea que se ejecuta siempre...
+                       # Siemper claro que no la desactive
+                       # Esta tarea QUE SIEMPRE QUERRE DESACTIVAR: SIEMPRE !
+                       # No la voy a dejar NUNCA PUESTA POR DEFECTO.
+                       # Esta tarea recopila información de la computadora a
+                       # la que nos estamos conectando (en nuestro caso localhost)
+                       # Es una aberración la cantidad de información que recopila... y lo vemos en un rato
+                       # Y para obtenerla tarda un huevo de tiempo... que no me interesa desperdiciar
+                       
+                       # Cuando se ejecuta un gather_facts, ansible repocila información del entorno destino y almacena toda esa información
+                       # dentro de una variable, que tendremos a nuestra disposición en el playbook: `ansible_facts`
+                       
+    # La división entre PRE, TASKS y POST es a nivel conceptual. FUNCIONALMENTE NO APORTA NADA.
+    # Podría meter todas als tareas dentro de uno cualquiera de esos bloques... y todo funcionaría exactamente igual
+    # O mejor dicho, podría conseguir que funcionase exactamente igual.
+       
+    pre_tasks: 
+        # Aseguramento de Requisitos
+        -   # PreTarea 1
+            name: Pre Tarea 1
+            debug:
+                msg: Soy la pretarea 1 # Esto es un texto según YAML
+                                       # Qué va a hacer Ansible con la mayoría de los textos
+                                       # que escribimos en los playbooks.
+                                       # En cuanto ansible lee uno de esos textos, lo pasa por JINJA !
+                                       # Según Ansible, son plantillas JINJA
+        -   # PreTarea 2
+            name: Pre Tarea 2
+            debug:
+                msg: Soy la pretarea 2 # Esto es una plantilla JINJA 
+
+        -   # PreTarea 3
+            name: Pre Tarea 3
+            debug:
+                var: ansible_facts # En este caso, en la docu del modulo debug, ya me indican que ellos pondrán las dobles llaves
+    
+        -   # PreTarea 4
+            name: Pre Tarea 4
+            debug:
+                msg: "Sistema operativo: {{ ansible_facts.distribution }}" # En las plantillas JINJA podemos hacer uso de variables, encerrando el nombre de la variable entre dobles llaves
+    
+        -   # PreTarea 5
+            name: Pre Tarea 5
+            debug:
+                # Como estamos viendo, entre las llaves lo que ponemos es una expresión
+                # Una expresion puede ser una variable
+                msg: "Memoria swap libre: {{ ansible_facts.memory_mb.swap.free }}" 
+    
+        -   # PreTarea 6
+            name: Pre Tarea 6
+            debug:
+                msg: "Tipo del 2º CPU: {{ ansible_facts.processor[5] }}"
+
+        -   # PreTarea 7
+            name: Pre Tarea 7
+            debug:
+                # Una expresion puede ser un calculo, usando operadores: + - / * > < >= <= == != and or
+                msg: |-
+                    Un calculo: {{ 3 + 4 }}
+                    Memoria en uso: {{ ansible_facts.memory_mb.real.total - ansible_facts.memory_mb.real.free }}
+                    
+        -   # PreTarea 8
+            name: Pre Tarea 8
+            debug:
+                # Una expresión JINJA también puede hacer uso de FILTROS JINJA 
+                # Un filtro JINJA es una función que aplicamos sobre un valor...
+                # Sería algo así (en su sintaxis) como los PIPES de linux / unix
+                msg: "Tipo del 2º CPU: {{ ansible_facts.processor[5] | upper }}"
+                # Tenemos un huevo de filtro definidos en JINJA de forma pedeterminada:
+                # https://jinja.palletsprojects.com/en/3.1.x/templates/#list-of-builtin-filters
+                # Además de esos filtros, ANSIBLE aporta sus propios filtros JINJA:
+                # https://docs.ansible.com/ansible/2.8/user_guide/playbooks_filters.html
+    
+    tasks: # Aqui dentro tendré una LISTA YAML, donde cada item representará una TAREA
+           # Las tareas aquí definidas las iremos ejecutando de forma secuencial.
+           # Una tarea solo se ejecutará si las anteriores no han fallado (a priori)
+           # Dicho de otra forma: Si una tarea falla, el playbook se detiene sobre el entorno que lo
+           # estemos ejecutando... quizas el playbook lo estoy ejecutando sobre 20 entornos... y en 19 va bien
+        -   # Tarea 1: Cada tarea tendrá: Un NOMBRE, Un MODULO (con una configuración)
+            name: Tarea 1
+            debug:
+                msg: Soy la tarea 1
+
+        ##########################################################################################
+        #   Control del estado de ejecución de una tarea
+        #   Hemos dicho que una tarea puede acabar en estado: OK, CHANGED, FAILED
+        #   Cómo decide Ansible el estado de finalización de una tarea?         ANSIBLE NO LO DECIDE
+        #   Quién lo decide? Quién es conocedor de esa información?             El MODULO, que es quien lo ejecuta
+        #   Cada modulo informa a Ansible de si la tarea ha ido bien, de si ha provocado cambios, o de si ha ido mal
+        #   No todo modulo tiene la información de si lo que ha ejecutado ha ido bien o mal o ha provocado cambios
+        #   ^^^ PROBLEMA !
+        ##########################################################################################
+        -   # Tarea 2
+            name: Tarea 2
+            debug:
+                msg: Soy la tarea 2
+            # Más cosas que podemos añadir en una tarea        
+        
+        -   # Tarea 3
+            name: Asegurarme que hay un usuario 'felipe' con una configuración. 
+                # Y no me cuentes tu vida Ansible, que es muy triste... Me la pela como lo hagas... SOLO HAZLO !
+            user:
+                name: felipe
+                home: /home/felipon
+                state: present
+            # Ponerme como administrador... equivalente al sudo
+            become: true
+            # Este MODULO, me respeta el principio de IDEMPOTENCIA:
+                # Si no está el usuario, que hará? CREARLO
+                # Si está el usuario, que hará?    NADA
+                # Si existe el usuario pero con otro home? Modificarle el home
+            # Os dije que los módulos (el 99.9% de ellos) nos dan IDEMPOTENCIA
+
+        -   # Tarea 4
+            name: Quiero saber la versión de nginx que tengo instalada
+            shell:
+                cmd: nginx --version
+            # Y por defecto el módulo shell siempre devuelve que aquello ha provocado cambio
+            # Ya que no tiene forma de saber si realmente ha provocado cambio o no
+            # Y en este caso es MI RESPONSABILIDAD informar del estado resultante
+            # El modulo shell es de ese 0.01% de modulos que no ofrecen IDEMPOTENCIA!
+            changed_when: false
+            failed_when:  false # Aqui podemos poner expresiones JINJA !
+
+    post_tasks:
+        #   Pruebas / Validaciones
+        #   Notificaciones
+        -   # Post Tarea 1
+            name: Post Tarea 1
+            debug:
+                msg: Soy la posttarea 1
+        -   # Post Tarea 2
+            name: Post Tarea 2
+            debug:
+                msg: Soy la posttarea 2
+        
