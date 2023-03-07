@@ -28,9 +28,9 @@
                 - 3306
                 # Este está muy bien.... aunque.... si alguien se equivoca al rellenar y duplica un software
                 # Se van a ejecutar ambos POR SEPARADO.... Nada se machaca
-            - name: nginx
-              ports: 
-                - 81
+            #- name: nginx
+            #  ports: 
+            #    - 81
         software_como_mapa_de_mapas:   # mapa de mapas
             nginx:
                 version:    1.21.2
@@ -43,9 +43,9 @@
                     - 3306        
             # En este caso... si se equivocan? y dupolcian software, como es un MAPA, las claves se consideran UNICAS
             # Y en este caso, una machaca a la otra... y al hacer los test, ya dará error donde sea.
-            nginx:
-                ports: 
-                    - 81
+            #nginx:
+            #    ports: 
+            #        - 81
         software_como_lista_de_listas:   # lista de listas
             -   - nginx
                 - 80
@@ -134,4 +134,169 @@
                 #                                   - key:      clave2
                 #                                     value:    valor2
                 
+        -   name: Variable original
+            debug:
+                var: software_como_lista_de_mapas
+                
+        -   name: Variable con subelements
+            debug:
+                var: software_como_lista_de_mapas | subelements('ports')                
+        
+        -   name: Abrir puertos
+            debug:
+                msg: |
+                    Debo abrir el puerto: {{ item[1] }}     
+                    Para el programa:     {{ item[0].name }}     
+                # 80 -> 443 -> 3306
+            #loop: "{{ software_como_mapa_de_mapas }}" # Esto no funcionaría. NO ES UNA LISTA
+            # SOLUCION A ESTE PROBLEMA: HEMOS DE TRANSFORMA EL MAPA en una LISTA
+            # Para ello hacemos uso del filtro JINJA definido por ANSIBLE: dict2items
+            loop: "{{ software_como_lista_de_mapas | subelements('ports') }}" 
+                #- ... 80 
+                #- ... 443
+                #- .. 3306
+                
+                
+#        software_como_lista_de_mapas:   # lista de mapas                        
+#            - name: nginx#
+#              ports: 
+#                - 80
+#                - 443
+#            - name: mariadb
+#              ports: 
+#                - 3306                
+#            
+#                VVV
+#                
+#            -   -   name: nginx \
+#                    ports:      |
+#                        - 80    |   item: Es una lista
+#                        - 443   |
+#                - 80            /
+#            
+#            -   -   name: nginx
+#                    ports: 
+#                        - 80
+#                        - 443
+#                - 443
+#            
+#            -   -   name: mariadb
+#                    ports: 
+#                        - 3306                
+#                - 3306
             
+            
+            # Para cada software en el listado de softwares:
+            # for
+                # Para cada puerto en ese software
+                # for
+                    # Abre el puerto
+                    # En ansible no podemos meter un bucle dentro de otro. 
+                    # SIMPLEMENTE NO SE PUEDE !
+            # Podemos usar el filtro subelements para conseguir una funcionalidad equivalente
+            
+            
+            
+#            LISTA -> subelements("ports")
+            
+#            - name: nginx                           
+#              version: 1.21
+#              ports:                                
+#                - 80
+#                - 443
+#            - name: mariadb
+#              version: 10.2
+#              ports: 
+#                - 3306
+                
+#                    VVVV
+                
+#            -   - name: nginx      
+#                  version: 1.21
+#                  ports:                                
+#                    - 80
+#                    - 443
+#                - 80
+#            -   - name: nginx                           
+#                  version: 1.21
+#                  ports:                                
+#                    - 80
+#                    - 443
+#                - 443
+#            -   - name: mariadb
+#                  version: 10.2
+#                  ports: 
+#                    - 3306                
+#                - 3306
+#---
+
+            
+#            LISTA -> subelements("version")
+#            
+#            - name: nginx                           
+#              version: 
+#                - 1.21
+#              ports:                                
+#                - 80
+#                - 443
+#            - name: mariadb
+#              version: 
+#                - 10.2
+#              ports: 
+#                - 3306
+#                
+#                    VVVV
+#                    
+#            -   - name: nginx                           
+#                  version: 
+#                    - 1.21
+#                  ports:                                
+#                    - 80
+#                    - 443
+#                - 1.21
+#            -   - name: mariadb
+#                  version: 
+#                    - 10.2
+#                  ports: 
+#                    - 3306                
+#                - 10.2
+
+
+        -   name: Abrir puertos version 2
+            debug:
+                msg: |
+                    Debo abrir el puerto: {{ item[1] }}     
+                    Para el programa:     {{ item[0].key }}     
+                # 80 -> 443 -> 3306
+            #loop: "{{ software_como_mapa_de_mapas }}" # Esto no funcionaría. NO ES UNA LISTA
+            # SOLUCION A ESTE PROBLEMA: HEMOS DE TRANSFORMA EL MAPA en una LISTA
+            # Para ello hacemos uso del filtro JINJA definido por ANSIBLE: dict2items
+            loop: "{{ software_como_mapa_de_mapas | dict2items | subelements('value.ports') }}" 
+                #- ... 80 
+                #- ... 443
+                #- .. 3306
+                
+                
+                
+#                
+#            - -   key: nginx
+#                  value:
+#                    version:    1.21.2
+#                    usuario:    www-data
+#                    ports: 
+#                        - 80
+#                        - 443
+#              - 80
+#            - -   key: nginx
+#                  value:
+#                    version:    1.21.2
+#                    usuario:    www-data
+#                    ports: 
+#                        - 80
+#                        - 443
+#              - 443
+#            - -   key: mariadb
+#                  value: 
+#                    ports: 
+#                        - 3306        
+#              - 3306

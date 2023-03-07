@@ -77,7 +77,7 @@
         -   # PreTarea 7
             name: Pre Tarea 7
             debug:
-                # Una expresion puede ser un calculo, usando operadores: + - / * > < >= <= == != and or
+                # Una expresion puede ser un calculo, usando operadores: + - / * > < >= <= == != and or not
                 msg: |-
                     Un calculo: {{ 3 + 4 }}
                     Memoria en uso: {{ ansible_facts.memory_mb.real.total - ansible_facts.memory_mb.real.free }}
@@ -253,7 +253,151 @@
             name: Post Tarea 2
             debug:
                 msg: Soy la posttarea 2
-    
+
+        -   name: Conjunto de tareas relacionadas
+            block: # try
+                -   # Tarea 1 del bloque
+                    name: Tarea 1 del bloque
+                    debug:
+                        msg: Soy la Tarea 1 del bloque
+                    failed_when: true
+                -   # Tarea 2 del bloque
+                    name: Tarea 2 del bloque
+                    debug:
+                        msg: Soy la Tarea 2 del bloque
+            rescue: # catch|except
+                # Las tareas del bloque rescue se ejecutan SOLO
+                # si alguna tarea del bloque principal da error,
+                # dandome la oportunidad de gestionar ese error
+                -   # Tarea 1 del rescue
+                    name: Tarea 1 del rescue
+                    debug:
+                        msg: Soy la Tarea 1 del rescue
+                -   # Tarea 2 del rescue
+                    name: Tarea 2 del rescue
+                    debug:
+                        msg: Soy la Tarea 2 del rescue
+            always: # finally
+                # Estas tareas se ejecutan tanto si las tareas del bloque van bien, como si van mal
+                -   # Tarea 1 del always
+                    name: Tarea 1 del always
+                    debug:
+                        msg: Soy la Tarea 1 del always
+            #tags: # Que aplican a cada tarea del bloque
+            #when: # Que aplican a cada tarea del bloque
+
+        -   # Post Tarea 3
+            name: Post Tarea 3
+            debug:
+                msg: Soy la posttarea 3
+            failed_when: true    
+            ignore_errors: true
+            
+        -   # Post Tarea 4
+            name: Post Tarea 4
+            debug:
+                msg: Soy la posttarea 4
+                
+                
+
+        -   # Post Tarea 5
+            name: Quiero saber la versión de ansible que tengo instalada
+            shell:
+                cmd: ansible --version
+            # Y por defecto el módulo shell siempre devuelve que aquello ha provocado cambio
+            # Ya que no tiene forma de saber si realmente ha provocado cambio o no
+            # Y en este caso es MI RESPONSABILIDAD informar del estado resultante
+            # El modulo shell es de ese 0.01% de modulos que no ofrecen IDEMPOTENCIA!
+            changed_when: false
+            failed_when:  false # Aqui podemos poner expresiones JINJA !
+            register: version_ansible # Esta variable guarda la salida del MODULO
+                
+        -   # Post Tarea 6
+            name: Mostrar la versión que tengo de Ansible
+            debug:
+                msg: |
+                    La version de ansible es: {{ version_ansible.stdout }}
+                    La version de ansible es: {{ version_ansible.stdout_lines[0] }}
+                    Return code: {{ version_ansible.rc }}
+        -   # Post Tarea 7
+            name: Ansible no está instalado
+            debug:
+                msg: Ansible no está instalado
+            when: version_ansible.rc > 0
+            
+                
+        -   # Post Tarea 8
+            name: Quiero saber la versión de ansible que tengo instalada
+            shell:
+                cmd: nginx --version
+            # Y por defecto el módulo shell siempre devuelve que aquello ha provocado cambio
+            # Ya que no tiene forma de saber si realmente ha provocado cambio o no
+            # Y en este caso es MI RESPONSABILIDAD informar del estado resultante
+            # El modulo shell es de ese 0.01% de modulos que no ofrecen IDEMPOTENCIA!
+            changed_when: false
+            failed_when:  false # Aqui podemos poner expresiones JINJA !
+            register: version_nginx
+            
+        -   # Post Tarea 9
+            name: Nginx no está instalado
+            debug:
+                msg: Nginx no está instalado
+            when: version_nginx.rc > 0
+        
+        -   name: Comprobar disponibilidad de nginx
+            block:
+                - name: comprobar la version instalada de nginx
+                  shell:
+                    cmd: nginx --version
+            rescue:
+                - name: Nginx no está instalado
+                  debug:
+                    msg: Nginx no está instalado
+            
+            # A las variables que generamos con un register, podemos preguntarles:
+            #.  is skipped
+            #.  is failed
+            #.  is success
+            #.  is changed
+               
+        -   # Post Tarea 8
+            name: Quiero saber la versión de ansible que tengo instalada
+            shell:
+                cmd: nginx --version
+            changed_when: false
+            register: version_nginx_2
+            ignore_errors: true
+            
+        -   # Post Tarea 9
+            name: Nginx no está instalado
+            debug:
+                msg: Nginx no está instalado
+            when: version_nginx_2 is failed
+            
+        -   debug:
+                var: version_nginx_2
+                
+        -   # Post Tarea 8
+            name: Quiero saber la versión que tengo instalada de unos programas
+            shell:
+                cmd: "{{ item }} --version"
+            changed_when: false
+            failed_when: false
+            loop:
+                - ansible
+                - nginx
+                - curl
+            register: versiones
+                
+        -   debug:
+                var: versiones
+                
+        -   debug:
+                msg: "La version instalada del programna: {{ ???? }} es: {{ ???? }}"
+            when: ???
+            loop: ???
+            # Si es que ese programa está instalado
+            
     handlers:
         -   # Handler 1
             name: Handler 1
