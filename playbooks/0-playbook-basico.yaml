@@ -393,9 +393,10 @@
                 var: versiones
                 
         -   debug:
-                msg: "La version instalada del programna: {{ ???? }} es: {{ ???? }}"
-            when: ???
-            loop: ???
+                msg: "La version instalada del programna: {{ item.item }} es {{ item.stdout_lines.0 }}"
+            # Cuando se ha aplicado el when, al haber un loop? En cada item del loop
+            when:   item.rc == 0
+            loop: "{{ versiones.results }}"
             # Si es que ese programa está instalado
             
     handlers:

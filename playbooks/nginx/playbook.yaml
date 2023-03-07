@@ -1,0 +1,19 @@
+-   hosts: localhost
+    gather_facts: false
+    
+    vars:
+        # Puerto
+        # Repositorio git
+        # versión de nginx que quiero instalar
+        # Directorio donde despliego la app
+    
+    pre_tasks:
+        -   name: 
+            
+    tasks:
+        -   name:   Asegurar que nginx está instalado en la versión solicitada
+    
+    post_tasks:
+    
+    handlers:
+    
