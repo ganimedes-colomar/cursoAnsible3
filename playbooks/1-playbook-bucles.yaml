@@ -1,0 +1,137 @@
+# https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_loops.html#with-sequence
+
+-   hosts:          localhost
+    gather_facts:   false
+    vars:
+###########################################
+        # Problema de la opción 1: NO HAY RELACION ENTRE SOFTWARE Y PUERTO
+        # Y eso en el futuro me complica el rellenar y mantener estos datos.    DESCARTADO
+        software_malo:
+            - curl
+            - nginx 
+            - git
+            - mariadb
+        puertos_malo:
+            - 80
+            - 443
+            - 3306
+        # Para representar colecciones de datos podemos usar: 
+        # En todas las opciones siguientes, los puertos van acompañañndo a cada software
+        # Listas y mapas
+        software_como_lista_de_mapas:   # lista de mapas                        
+            - name: nginx
+              ports: 
+                - 80
+                - 443
+            - name: mariadb
+              ports: 
+                - 3306
+                # Este está muy bien.... aunque.... si alguien se equivoca al rellenar y duplica un software
+                # Se van a ejecutar ambos POR SEPARADO.... Nada se machaca
+            - name: nginx
+              ports: 
+                - 81
+        software_como_mapa_de_mapas:   # mapa de mapas
+            nginx:
+                version:    1.21.2
+                usuario:    www-data
+                ports: 
+                    - 80
+                    - 443
+            mariadb:
+                ports: 
+                    - 3306        
+            # En este caso... si se equivocan? y dupolcian software, como es un MAPA, las claves se consideran UNICAS
+            # Y en este caso, una machaca a la otra... y al hacer los test, ya dará error donde sea.
+            nginx:
+                ports: 
+                    - 81
+        software_como_lista_de_listas:   # lista de listas
+            -   - nginx
+                - 80
+                - 443
+            -   - mariadb
+                - 3306
+            # Mis problema que en 2 ... y además... el que rellene esto
+            # se va a cagar en mis muelas... con tanto puñetero guincito
+        software_como_mapa_de_listas: # mapa de listas
+            nginx:
+                - 80
+                - 443
+            mariadb:
+                - 3306        
+            # Este escenario esta guay si solo quiero meter información de PUERTOS para cada software
+            # Y si quiero meter también la versión del software que quiero instalar
+        # Todas estas estructuras tienen TODA la info que necesito. 
+        # CUAL ME INTERESA? LA MAS CONVENIENTE!
+        # De cara a determinar la más conveniente me puedo fijar en:
+        # - Que me sea lo más sencillo posible de procesar.                     ESTO ME VIENE BIEN A MI
+        #       Pero no soy un egolatra de mierda! Y mi objetivo es que esto sea sencillo de usar
+        #       Y si alguien se tiene que comer la mierda, que sea YO.
+        #   Si lo voy a meter en un loop, me interesa que tipo de dato? UNA LISTA
+        # - Que sea lo más sencillo posible de rellenar.                        IMPORTANTE
+###########################################            
+    tasks:
+        -   name: Instalar programas
+            debug:
+                msg: Estoy instalando con apt el programa {{ item }}
+            loop: "{{ software_malo }}" # Esta expresión JINJA debe devolver una lista
+            # Al usar la palabara loop, Ansible me regala la variable `ìtem`
+            # Esa variable irá tomando cada uno de los valores de nuestra lista sobre la que iteramos
+            
+            
+            
+        -   name: Instalar programas version 2
+            debug:
+                msg: |
+                    Estoy instalando con apt el programa {{ item.name }}
+                    Y debo abrirle los puertos: {{ item.ports }}
+            loop: "{{ software_como_lista_de_mapas }}"
+            
+        -   name: Instalar programas version 3
+            debug:
+                msg: |
+                    Estoy instalando con apt el programa {{ item.name }}
+                    Y debo abrirle los puertos: {{ item.ports }}
+            loop: "{{ software_como_lista_de_mapas }}"
+            
+                #software_como_lista_de_mapas:   # lista de mapas                        
+                #    - name: nginx   \
+                #      ports:        |   Todo esto es el ITEM
+                #        - 80        |
+                #        - 443       /
+                #    - name: mariadb
+                #      ports: 
+                #        - 3306
+
+
+        -   name: Instalar programas version 3
+            debug:
+                msg: |
+                    Estoy instalando con apt el programa {{ item.key }}
+                    Y debo abrirle los puertos: {{ item.value.ports }}
+
+            #loop: "{{ software_como_mapa_de_mapas }}" # Esto no funcionaría. NO ES UNA LISTA
+            # SOLUCION A ESTE PROBLEMA: HEMOS DE TRANSFORMA EL MAPA en una LISTA
+            # Para ello hacemos uso del filtro JINJA definido por ANSIBLE: dict2items
+            loop: "{{ software_como_mapa_de_mapas | dict2items }}" 
+            
+                # mapa de mapas                                 lista
+                #    nginx:                                  - key:          nginx
+                #        version:    1.21.2                    value:        
+                #        usuario:    www-data                        version: 1.21.2
+                #        ports:                                      usuario: www-data
+                #            - 80                                    ports:
+                #            - 443                                       - 80
+                #                                                        - 443
+                
+            # dict2items
+            
+                # Mapa = diccionario                Lista de MAPA
+                
+                # clave1: valor1            --->    - key:      clave1
+                # clave2: valor2                      value:    valor1
+                #                                   - key:      clave2
+                #                                     value:    valor2
+                
+            

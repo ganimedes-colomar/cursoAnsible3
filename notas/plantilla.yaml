@@ -86,10 +86,10 @@ Si sigo escribiendo aquí
 ~ # Valor nulo
 ---
 # Nodos (datos) de tipo colección: 
-# Listas ordenadas                                                              √
+# Listas ordenadas    √                                                          √
 # Listas desordenadas                               
 # Mapas ordenados                                   
-# Mapas desordenados.                                                           √
+# Mapas desordenados. √                                                         √
 ---
 # Lista ordenada:
 # Es una secuencia ordenada de NODOS.

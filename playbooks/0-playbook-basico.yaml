@@ -30,7 +30,12 @@
     # La división entre PRE, TASKS y POST es a nivel conceptual. FUNCIONALMENTE NO APORTA NADA.
     # Podría meter todas als tareas dentro de uno cualquiera de esos bloques... y todo funcionaría exactamente igual
     # O mejor dicho, podría conseguir que funcionase exactamente igual.
-       
+    
+    vars: # Aqui metemos un MAPA YAML cuyas claves serán NOMBRES DE VARIABLES
+          # Y sus valores, los valores de las variables
+        usuario: "felipe"
+        home_usuario: "/home/felipe"
+    
     pre_tasks: 
         # Aseguramento de Requisitos
         -   # PreTarea 1
@@ -49,6 +54,7 @@
         -   # PreTarea 3
             name: Pre Tarea 3
             debug:
+               # msg: "{{ ansible_facts }}"
                 var: ansible_facts # En este caso, en la docu del modulo debug, ya me indican que ellos pondrán las dobles llaves
     
         -   # PreTarea 4
@@ -117,8 +123,8 @@
             name: Asegurarme que hay un usuario 'felipe' con una configuración. 
                 # Y no me cuentes tu vida Ansible, que es muy triste... Me la pela como lo hagas... SOLO HAZLO !
             user:
-                name: felipe
-                home: /home/felipon
+                name: "{{ usuario }}"
+                home: "{{ home_usuario }}"
                 state: present
             # Ponerme como administrador... equivalente al sudo
             become: true
@@ -138,6 +144,103 @@
             # El modulo shell es de ese 0.01% de modulos que no ofrecen IDEMPOTENCIA!
             changed_when: false
             failed_when:  false # Aqui podemos poner expresiones JINJA !
+        ##########################################################################################
+        # Control del flujo: Condicionales
+        ##########################################################################################
+        -   # Tarea 5
+            name: Tarea 5
+            debug:
+                msg: Soy una tarea condicional... que se ejecuta solo en máquinas UBUNTU !
+            when: ansible_facts.distribution == "Ubuntu" # Expresion lógica jinja (es decir, que devuelva true o false)... sin llaves
+
+        -   # Tarea 6
+            name: Tarea 6
+            debug:
+                msg: Soy una tarea condicional... que se ejecuta solo en máquinas QUE NO SEAN UBUNTU !
+            when: ansible_facts.distribution != "Ubuntu" # Expresion lógica jinja (es decir, que devuelva true o false)... sin llaves
+        ##########################################################################################
+        # Control del flujo: TAGS
+        # Los tags me permiten determinar al lanzar la ejecución del playbook,
+        # Que tareas quiero o no quiero que se ejecuten:
+        # Al llamar a ansible-playbook 2 argumentos:
+        #   --tags Que me permite determinar los tags que quiero que se ejecuten
+        #   --skip-tags Que me permite determinar los tags que no quiero que se ejecuten
+        # SIEMPRE PONEMOS TAGS en todas las tareas:
+        # instalacion, pruebas, configuracion, requisitos
+        ##########################################################################################
+        -   # Tarea 7
+            name: Tarea 7
+            debug:
+                msg: Esta es una tarea que está instalando unas cosas 
+            tags:
+                - instalacion
+
+        -   # Tarea 8
+            name: Tarea 8
+            debug:
+                msg: Esta es una tarea que está configurando unas cosas
+            tags:
+                - configuracion
+
+        -   # Tarea 9
+            name: Tarea 9
+            debug:
+                msg: Esta es una tarea que está probando unas cosas
+            tags:
+                - test
+                - always # Este es un tag propio de ansible... y las tareas con este tag se ejecutan siempre
+                # - never # Es lo contrario a always. En mi puñetera vida he entendido para que sirve
+        ##########################################################################################
+        # Control del flujo: HANDLERS
+        # Los handlers son tareas que se ejecutan solo cuando SON INVOCADOS
+        # Cuando un handler es invocado:
+        # - que una tarea (pre, tasks, post) defina la propiedad notify apuntando a un handler
+        # - la tarea con el notify, al ejecutarse, debe provocar un cambio (CHANGED)
+        # Con independencia de cuando un handler es invocado,
+        # Los handlers que hayan sido invocados se ejecutan al finalizar el bloque 
+        # (pre, tasks, post) en el que han sido invocados.... Y SOLO UNA VEZ
+        # aunque hayan sido invocados varias veces
+        # MALA PRACTICA Es poner en un notify el nombre de una tarea HANDLER
+        # BUENA PRACTICA, una tarea notifica UN EVENTO!
+        #                 nuestros handlers escucharán eventos
+        ##########################################################################################
+
+        -   # Tarea 10
+            name: Tarea 10
+            debug:
+                msg: Esta es una tarea que va a invocar un handler
+            notify: 
+                - Handler 1  # MALA PRACTICA
+                - Handler 1.2
+            changed_when: true
+
+        -   # Tarea 11
+            name: Tarea 11
+            debug:
+                msg: Esta es una tarea quetambién va a invocar un handler
+            notify: 
+                - Handler 1  # MALA PRACTICA
+                - Handler 1.2
+            changed_when: true
+
+        -   # Tarea 12
+            name: Tarea 12
+            debug:
+                msg: Esta es otra tarea
+                
+        -   # Tarea 14
+            name: Tarea 14
+            debug:
+                msg: Esta es una tarea que invoca un EVENTO 
+            notify: SERVIDOR_RECONFIGURADO  # BUENA PRACTICA
+            changed_when: true
+      
+        -   # Tarea 15
+            name: Tarea 15
+            debug:
+                msg: Esta es una tarea que invoca un EVENTO 
+            notify: SERVIDOR_RECONFIGURADO  # BUENA PRACTICA
+            changed_when: true
 
     post_tasks:
         #   Pruebas / Validaciones
@@ -150,4 +253,35 @@
             name: Post Tarea 2
             debug:
                 msg: Soy la posttarea 2
-        
+    
+    handlers:
+        -   # Handler 1
+            name: Handler 1
+            debug:
+                msg: Soy el Handler 1
+        -   # Handler 1.2
+            name: Handler 1.2
+            debug:
+                msg: Soy el Handler 1.2
+                
+                
+                
+        -   # Handler 2
+            name: Handler 2
+            debug:
+                msg: Soy el Handler 2
+            listen:
+                - SERVIDOR_RECONFIGURADO
+        -   # Handler 3
+            name: Handler 3
+            debug:
+                msg: Soy el Handler 3
+            listen:
+                - SERVIDOR_RECONFIGURADO
+        -   # Handler 3.1
+            name: Handler 3.1
+            debug:
+                msg: Soy el Handler 3.1
+            listen:
+                - SERVIDOR_RECONFIGURADO
+                

@@ -1,0 +1,22 @@
+-   hosts:
+    gather_facts: false
+    
+    vars:
+    
+    pre_tasks:                                                                  LISTADO DE TAREAS
+    tasks:                                                                      LISTADO DE TAREAS
+    post_tasks:                                                                 LISTADO DE TAREAS
+        -   name:
+            <modulo>:
+            changed_when: 
+            failed_when:
+            become: true        # sudo
+            when:
+            tags:
+            notify:                                                             LISTADO DE NOMBRES DE HANDLERS O EVENTOS
+            vars:
+            loop:                                                               LISTA DE VALORES SOBRE LA QUE ITERAR
+    
+    handlers:                                                                   LISTADO DE TAREAS
+        -   name:
+            listen:                                                             LISTADO DE EVENTOS
