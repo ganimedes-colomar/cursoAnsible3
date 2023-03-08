@@ -39,7 +39,7 @@ on
 off
 # Todos estos eran considerados valores lógico VALIDOS en YAML 1.1
 # Desde YAML 1.2 YA NO SE ADMITEN.
-# Muchos parsers (los programas que leen YAML) siguen admitiendo estas sintaxis que YA NO SON VALIDAS segñun el estandar.
+# Muchos parsers (los programas que leen YAML) siguen admitiendo estas sintaxis que YA NO SON VALIDAS según el estandar.
 ---
 # Textos
 Ho"la 'mi amigo

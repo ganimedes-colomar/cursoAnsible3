@@ -1,19 +1,202 @@
--   hosts: localhost
-    gather_facts: false
-    
+-   hosts:          localhost
+    gather_facts:   false
+    become:         true
     vars:
         # Puerto
         # Repositorio git
         # versión de nginx que quiero instalar
         # Directorio donde despliego la app
-    
+        nginx:
+            version:        1.14.*
+        app:
+            hostname:       localhost
+            port:           81
+            document_root:  /var/web/app1
+            repo:           https://github.com/IvanciniGT/webEjemploAnsible
+            test:
+                -   endpoint:   /
+                    statuscode: 200
+                -   endpoint:   /index.html
+                    statuscode: 200
+        host:
+            requirements:
+                software:
+                          - git
+                hardware:
+                    cpu:    1
+                    memory: 1   # Gbs
+        
     pre_tasks:
-        -   name: 
-            
-    tasks:
+        -   name:   Obtener la información de hardware del servidor
+            setup:
+                gather_subset:
+                    - hardware
+            tags: 
+                - REQUISITOS
+
+        -   name:   Asegurar que el servidor es adecuado para el funcionamiento de esta app
+            meta:   end_host
+            when: 
+                    - ansible_facts.processor_vcpus is defined
+                    - ansible_facts.processor_vcpus < host.requirements.hardware.cpu
+                    - ansible_facts.memtotal_mb < (host.requirements.hardware.memory * 1024)
+            tags: 
+                - REQUISITOS
+
+        -   name:   Asegurar que tengo los repos actualizados
+            apt:
+                update_cache:   true
+            changed_when:       false
+            tags:
+                - REQUISITOS
+                - INSTALACION
+        
+        -   name:   Asegurar que tengo el software necesario para poder ejecutar el playbook
+            apt:
+                name: "{{ item }}"
+                state: present
+            loop: "{{ host.requirements.software }}"
+            tags:
+                - REQUISITOS
+                - DESPLIEGUE
+
+    tasks:  # Objetivo principal del playbook: Montar nginx y la app
         -   name:   Asegurar que nginx está instalado en la versión solicitada
-    
+            # Mirar si nginx está instalado y además en la versión que quiero...
+            # Y si no... INSTALARLO!
+            apt:
+                name: "nginx={{ nginx.version }}" 
+                state: present
+            tags:
+                - INSTALACION
+            
+        -   name:   Asegurar que nginx tiene la configuración adecuada
+            notify: CAMBIO_CONFIGURACION
+            # Verificar que el fichero de configuración es igual al que pondría a día de hoy con la configuración que me están dando:
+            # Puertos, hostname, document_root....
+            # Y si no es igual, que sobreescriba si ya existe
+            #                   que lo cree si no existe
+            # Y si es igual, que no haga nada
+            template:
+                src:        ./nginx.conf
+                dest:       /etc/nginx/sites-available/default
+                mode:       '0644'
+                force:      true
+                backup:     true
+            tags:
+                - CONFIGURACION
+
+        -   name:   Asegurar que tengo el directorio para hacer el clonado del repositorio de la app
+            file:
+                path:       "{{ app.document_root }}"    
+                mode:       '0755'
+                state:      directory
+            tags:
+                - DESPLIEGUE
+
+        -   name:   Asegurar que tengo la versión de la app requerida en el directorio de despliegue
+            git:
+                repo:       "{{ app.repo }}" 
+                dest:       "{{ app.document_root }}" 
+            notify: CAMBIO_APP
+            tags:
+                - DESPLIEGUE
+        
+        -   name:   Asegurar que tengo servicio de nginx está arrancado
+            # Mirar si el servicio esta arrancado: systemctl status nginx
+            # Y si no? sudo systemctl start nginx
+            service:
+                name:       nginx
+                state:      started
+                enabled:    true
+            notify: SERVICIO_INICIADO
+            tags:
+                - ARRANQUE
+                - INSTALACION
+
     post_tasks:
-    
+        -   name:   Comprobar el correcto funcionamiento del playbook
+            block:
+
+                -   name:   Comprobar que el servicio de nginx está arrancado
+                    shell:
+                        cmd:    "[ $(ps -eaf | grep -c nginx) -gt 1 ]"
+                    changed_when: false
+        
+                -   name:   Comprobar el puerto de nginx está abierto en el host
+                    wait_for:
+                        port:           "{{ app.port }}"
+                        timeout:        5
+
+                -   name:   Comprobar que desde fuera puedo acceder al puerto
+                    wait_for:
+                        port:           "{{ app.port }}"
+                        host:           "{{ app.hostname }}"
+                        timeout:        5
+                    delegate_to:        localhost
+        
+                -   name:   Comprobar que la app responde adecuadamente desde el propio servidor
+                    uri:
+                        url:            "http://{{ app.hostname }}:{{ app.port }}{{ item.endpoint }}"
+                        method:         GET
+                        status_code:    "{{ item.statuscode }}"
+                    loop: "{{ app.test }}"
+        
+                -   name:   Comprobar que la app responde adecuadamente desde el equipo que lanza el playbook
+                    uri:
+                        url:            "http://{{ app.hostname }}:{{ app.port }}{{ item.endpoint }}"
+                        method:         GET
+                        status_code:    "{{ item.statuscode }}"
+                    loop: "{{ app.test }}"
+                    delegate_to:        localhost
+                    # Desde donde quiero ejecutar la tarea: desde dentro del propio servidor que contiene el nginx
+                    # Desde el equipo desde el que estoy lanzando el playbook < FIREWALL !
+
+            rescue:
+                -   name:   Notificar el problema (email, sms, chat....)
+                    changed_when: false
+                    debug:
+                        msg: "Esto no churula !!!!"
+                    tags:
+                        - NOTIFICACION
+            tags:
+                - PRUEBAS
+                - always
+
     handlers:
-    
+        -   name:   Asegurar que el servicio de nginx es reiniciado
+            # sudo systemctl restart nginx
+            service:
+                name:       nginx
+                state:      restarted
+            listen:
+                - CAMBIO_CONFIGURACION
+                - CAMBIO_APP
+                
+        -   name:   Dar tiempo a que nginx arranque
+            shell:
+                cmd:    sleep 10
+            changed_when:   false
+            listen:
+                - CAMBIO_CONFIGURACION
+                - CAMBIO_APP
+                - SERVICIO_INICIADO
+
+
+
+# Cuando monteis un playbook, no penseis en el caso bonito de que todo funcione.
+# Poneros en el caso feo, de que nada funciona. Y si algo falla, que me interesa a mi?
+# Saber que ha fallado! <<<<<< IMPORTANTISIMO
+
+# Si al obtener el repo de git falla:
+# El repo de git no existe
+# No hay conexión de red con el repo de git (el servidor de git está caido)
+# No tenga permisos para crear esa carpeta
+# La ruta que me han puesto ya exista con otro contenido
+
+# Cada tarea que voy metiendo en el playbook.... la tengo que ir analizando con detalle:
+# - Qué impacto tiene que la tarea provoque un cambio?
+# - Qué debo hacer si la tarea falla?
+
+# Si la instalación falla.... quiero volver a la versión anterior? No se....
+# Que es lo que si que quiero seguro? QUE LA GENTE SE ENTERE DE QUE ESTO HA FALLADO !

@@ -18,6 +18,7 @@
             loop:                                                               LISTA DE VALORES SOBRE LA QUE ITERAR
             ignore_errors:
             register:
+            delegate_to:    Me permite decidir si quiero ejecutar la tarea en otro entorno
             
         -   name:
             block:                                                              LISTADO DE TAREAS

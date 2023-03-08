@@ -18,7 +18,8 @@ Estimación de número de tareas que nos van a hacer falta?
 
 si lo hacemos en menos de 20 nos damos damos con un canto en los dientes !  WTF !!!!!!!
 
-Que nos va a joder aquí? sin complicarlo! EL PUÑETERO CONCEPTO DE IDEMPOTENCIA
+Que nos va a joder aquí? sin complicarlo! 
+EL PUÑETERO CONCEPTO DE IDEMPOTENCIA
 
 Que significa que el playbook debe funcionar si?
 - No existe una instalacion de nginx
@@ -49,7 +50,8 @@ Maquina limpia:
     curl localhost:81
 
 OTRO ESCENARIO:
-Maquina en produccion, sirviendo la version antigua de la aplciacion en el mismo nginx que necesito ahora
+Maquina en produccion, sirviendo la version antigua de la 
+aplciacion en el mismo nginx que necesito ahora
     instalar git si no lo está
     instalar curl si no lo esta
     git pull
@@ -57,14 +59,37 @@ Maquina en produccion, sirviendo la version antigua de la aplciacion en el mismo
     Y cambiarle la configruación? NO
     sudo systemctl restart nginx
 
-OTRO ESCENARIO:
-Maquina en produccion, sirviendo la misma version de la aplciacion en el mismo nginx que necesito ahora
+OTRO ESCENARIO:             Monitorizar
+Maquina en produccion, 
+sirviendo la misma version de la aplciacion 
+en el mismo nginx que necesito ahora
 
 OTRO ESCENARIO:
-Se ha caido el servidor... pero todo está instalado dpm
+Se ha caido el nginx... pero todo está instalado dpm
 
 OTRO ESCENARIO:
 Nginx está instalado en su versión y la app también
 Pero a un gracioso se le ha ocurrido cambiar los puertos
     Necesito nuevo fichero de configuracion
     Reinicio del servicio
+    
+
+    
+Para ejecutarlo cada media hora o 5 minutos:
+    - PRUEBAS -> SI PRUEBAS FALLA -> EJECUTAR TODO -> SI FALLA -> QUE ME NOTIFIQUE
+        ^^^^^^
+      Cuantas veces estoy ejecutando el playbook? 1 o 2 ->
+        ORQUESTACION DE PLAYBOOKS < Ansible tower
+        
+    
+Si cambiamos el nginx corporativamente:
+    - INSTALACION -> SI FALLA? -> EJECUTA TODO? -> SI FALLA -> QUE ME NOTIFIQUE
+
+Si cambiamos la versión de la app
+    - DESPLIEGUE
+    
+Si cambioamos puertos
+    - CONFIGURACION
+    
+Si estas cosas las estoy lanzando a mano desde tower
+    (SKIP) NOTIFICACION
