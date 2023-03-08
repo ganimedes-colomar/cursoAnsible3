@@ -1,0 +1,14 @@
+app:
+    hostname:       localhost
+    port:           81
+    document_root:  /var/web/app1
+    repo:           https://github.com/IvanciniGT/webEjemploAnsible
+    test:
+        -   endpoint:   /
+            statuscode: 200
+        -   endpoint:   /index.html
+            statuscode: 200
+    requirements:
+        hardware:
+            cpu:    1
+            memory: 1   # Gbs

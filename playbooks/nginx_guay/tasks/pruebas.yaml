@@ -1,0 +1,33 @@
+-   name:   Comprobar que el servicio de nginx está arrancado
+    shell:
+        cmd:    "[ $(ps -eaf | grep -c nginx) -gt 1 ]"
+    changed_when: false
+
+-   name:   Comprobar el puerto de nginx está abierto en el host
+    wait_for:
+        port:           "{{ app.port }}"
+        timeout:        5
+
+-   name:   Comprobar que desde fuera puedo acceder al puerto
+    wait_for:
+        port:           "{{ app.port }}"
+        host:           "{{ app.hostname }}"
+        timeout:        5
+    delegate_to:        localhost
+
+-   name:   Comprobar que la app responde adecuadamente desde el propio servidor
+    uri:
+        url:            "http://{{ app.hostname }}:{{ app.port }}{{ item.endpoint }}"
+        method:         GET
+        status_code:    "{{ item.statuscode }}"
+    loop: "{{ app.test }}"
+
+-   name:   Comprobar que la app responde adecuadamente desde el equipo que lanza el playbook
+    uri:
+        url:            "http://{{ app.hostname }}:{{ app.port }}{{ item.endpoint }}"
+        method:         GET
+        status_code:    "{{ item.statuscode }}"
+    loop: "{{ app.test }}"
+    delegate_to:        localhost
+    tags:
+        - PRUEBAS

@@ -1,0 +1,27 @@
+-   name:   Asegurar que nginx está instalado en la versión solicitada
+    apt:
+        name: "nginx={{ nginx.version }}" 
+        state: present
+    tags:
+        - INSTALACION
+    
+-   name:   Asegurar que nginx tiene la configuración adecuada
+    notify: CAMBIO_CONFIGURACION
+    template:
+        src:        templates/nginx.conf
+        dest:       /etc/nginx/sites-available/default
+        mode:       '0644'
+        force:      true
+        backup:     true
+    tags:
+        - CONFIGURACION
+
+-   name:   Asegurar que tengo servicio de nginx está arrancado
+    service:
+        name:       nginx
+        state:      started
+        enabled:    true
+    notify: SERVICIO_INICIADO
+    tags:
+        - ARRANQUE
+        - INSTALACION

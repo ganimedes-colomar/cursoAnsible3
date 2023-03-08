@@ -1,0 +1,12 @@
+
+-   name:   Asegurar que tengo el directorio para hacer el clonado del repositorio de la app
+    file:
+        path:       "{{ app.document_root }}"    
+        mode:       '0755'
+        state:      directory
+
+-   name:   Asegurar que tengo la versión de la app requerida en el directorio de despliegue
+    git:
+        repo:       "{{ app.repo }}" 
+        dest:       "{{ app.document_root }}" 
+    notify: CAMBIO_APP

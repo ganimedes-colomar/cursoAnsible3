@@ -1,0 +1,14 @@
+-   name:   Asegurar que tengo los repos actualizados
+    apt:
+        update_cache:   true
+    changed_when:       false
+    tags:
+        - INSTALACION
+
+-   name:   Asegurar que tengo el software necesario para poder ejecutar el playbook
+    apt:
+        name: "{{ item }}"
+        state: present
+    loop: "{{ playbook.requirements.software }}"
+    tags:
+        - DESPLIEGUE

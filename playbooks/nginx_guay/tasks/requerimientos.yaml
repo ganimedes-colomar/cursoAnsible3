@@ -1,0 +1,11 @@
+-   name:   Obtener la información de hardware del servidor
+    setup:
+        gather_subset:
+            - hardware
+
+-   name:   Asegurar que el servidor es adecuado para el funcionamiento de esta app
+    meta:   end_host
+    when: 
+            - ansible_facts.processor_vcpus is defined
+            - ansible_facts.processor_vcpus < app.requirements.hardware.cpu
+            - ansible_facts.memtotal_mb < (app.requirements.hardware.memory * 1024)

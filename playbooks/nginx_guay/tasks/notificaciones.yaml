@@ -1,0 +1,4 @@
+-   name:   Notificar el problema (email, sms, chat....)
+    changed_when: false
+    debug:
+        msg: "Esto no churula !!!!"

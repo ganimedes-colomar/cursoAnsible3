@@ -1,0 +1,58 @@
+-   hosts:          localhost
+    gather_facts:   false
+    become:         true
+
+    pre_tasks:
+        
+        -   name:   Cargar variables propias del playbook
+            include_vars: vars/vars.yaml
+            
+        -   name:   Asegurar requerimientos de hardware
+            include_tasks: tasks/requerimientos.yaml
+            tags: 
+                - REQUISITOS
+
+        -   name:   Asegurar requerimientos de software para la ejecución del playbook
+            include_tasks: tasks/requerimientos_software.yaml
+            tags: 
+                - REQUISITOS
+
+    tasks:  
+        -   name:   Asegurar la correcta instalación y configuración de nginx
+            include_tasks: tasks/nginx.yaml
+
+        -   name:   Asegurar el correcto despliegue de la app
+            include_tasks: tasks/despliegue.yaml
+            tags:
+                - DESPLIEGUE        
+    post_tasks:
+        -   name:   Comprobar el correcto funcionamiento del playbook
+            block:
+                -   name:   Pruebas del playbook
+                    include_tasks: tasks/pruebas.yaml
+                    tags:
+                        - PRUEBAS
+                        - always
+            rescue:
+                -   name:   Notificaciones en caso de error
+                    include_tasks: tasks/notificaciones.yaml
+                    tags:
+                        - NOTIFICACION
+        
+    handlers:
+        -   name:   Asegurar que el servicio de nginx es reiniciado
+            service:
+                name:       nginx
+                state:      restarted
+            listen:
+                - CAMBIO_CONFIGURACION
+                - CAMBIO_APP
+                
+        -   name:   Dar tiempo a que nginx arranque
+            shell:
+                cmd:    sleep 10
+            changed_when:   false
+            listen:
+                - CAMBIO_CONFIGURACION
+                - CAMBIO_APP
+                - SERVICIO_INICIADO
