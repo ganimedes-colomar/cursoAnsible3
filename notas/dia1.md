@@ -182,6 +182,7 @@ Una herramienta que nos ofrece:
 - Un repositorio centralizado de credenciales
 - API REST para solicitar remotamente la ejecución de tareas / playbooks
 - **Un mecanismo para orquestar playbooks**
+- Un repositorio centralizado de CREDENCIALES
 
 # Palabros importantes en el ecosistema ANSIBLE / Arquitectura de Ansible
 

@@ -1,0 +1,8 @@
+-   host:   
+            # localhost
+            # <nombre de un equipo>
+            # all <- Todos los entornos del catálogo: SUELE SER LA OPCION HABITUAL
+            # <nombre de un grupo>
+            # nginx:!produccion            
+            # nginx:&produccion
+    order: inventory # reversed_inventory | sorted | reversed_sorted | shuffle

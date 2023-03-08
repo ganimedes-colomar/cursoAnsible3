@@ -1,0 +1,22 @@
+all:
+    hosts:
+        mipc:
+            ansible_host:           localhost  
+            ansible_connection:     local
+    children:
+        webservers:
+            children:
+                nginx:
+                    hosts:
+                        "nginx[01:20].produccion.es": {}
+                        "nginx[01:5].integracion.es": {}
+                        "nginx[01:8].desarrollo.es": {}
+                    vars: 
+                        nginx:
+                            version: 1.14.*
+                        ports:
+                            - 80
+                            - 443
+                vars:
+                    ansible_connection: ssh
+                    ansible_user:       tower
