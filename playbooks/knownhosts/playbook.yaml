@@ -23,30 +23,59 @@
         generate_finger_print_on_unknown:   True
         regenerate_finger_print_on_changed: False
         log_file:                           "./log.txt"
+        default_fingerprint_algorythm:      ssh-rsa #ecdsa-sha2-nistp256 ssh-ed25519
+
         
     tasks:
         -   name:           Saber si tengo el host dado de alta en el known_hosts
+            shell:
+                cmd:        >
+                                ssh-keygen -F {{ ansible_host }} 2>/dev/null 
+                                    | grep -e ^[^#] 
+                                    | sed 's/ /\n/g'                                     
                             # Mirar en el fichero known_hosts y CAPTURAR LA SALIDA
+            changed_when:   false
             register:       fingerprint_registrado
+                            # Como sé si se ha encontrado el fingerprint:       len(fingerprint_registrado.stdout_lines) >= 3
+                            # Algoritmo que se había registrado:                fingerprint_registrado.stdout_lines.1
+                            # Valor del fingerprint:                            fingerprint_registrado.stdout_lines.2
             delegate_to:    localhost
-        
+            tags:    
+                -           KNOWN_HOSTS
+
         -   name:           Conocer la huella de la maquina en la actualidad
             register:       fingerprint_actual
             delegate_to:    localhost
+            tags:    
+                -           KNOWN_HOSTS
             
-        -   name:           Reemplazar el antiguo fingerprint por el actual en el known_hosts
-            delegate_to:    localhost
-            when:           
-                -           # Si los fingerprints no coinciden 
-                -           # y EXPLICITAMENTE ME PIDEN QUE LA REGERENE ESA SITUACION
+        -   name:           Copia de seguridad del known_hosts
+            when:           # Vaya a haber algun cambio
+            tags:    
+                -           KNOWN_HOSTS
         
-        -   name:           Dar de alta el fingerprint en el fichero kwnon_hosts
-            delegate_to:    localhost
-            when:
-                -           # Si la máquina no está registrada actualmente
-                -           # Y EXPRESAMENTE ME PIDAN QUE DE DE ALTA LAS MAQUINAS NUEVAS 
+        -   name:                   Operaciones sobre el fichero known_hosts
+            block:
+                -   name:           Eliminar el antiguo fingerprint del known_hosts
+                    delegate_to:    localhost
+                    when:           
+                        -           # Si los fingerprints no coinciden 
+                        -           # y EXPLICITAMENTE ME PIDEN QUE LA REGERENE ESA SITUACION
                 
-                
+                -   name:           Dar de alta el fingerprint en el fichero kwnon_hosts
+                    notify:         NUEVO_FINGERPRINT
+                    delegate_to:    localhost
+                    when:
+                        -           # Si la máquina no está registrada actualmente Y EXPRESAMENTE ME PIDAN QUE DE DE ALTA LAS MAQUINAS NUEVAS 
+                                    # O si la maquina si está registrada, y no conincide los fingerprint y me piden que los regenere
+            rescue:
+                -   name:           Restaurar la copia de seguridad
+            tags:    
+                -                   KNOWN_HOSTS
+    handlers:
+         -  name:   Registrarlo en el log. *****
+            listen: NUEVO_FINGERPRINT
+
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit contenedor1 --extra-vars "regenerate_finger_print_on_changed=true"
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --extra-vars "generate_finger_print_on_unknown=true"
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit elasticsearch --extra-vars "generate_finger_print_on_unknown=true"
