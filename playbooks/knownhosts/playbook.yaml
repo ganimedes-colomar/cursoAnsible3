@@ -34,7 +34,7 @@
                                 | sed 's/ /\n/g'                                     
                             # Mirar en el fichero known_hosts y CAPTURAR LA SALIDA
             changed_when:   false
-            register:       fingerprint_registrado
+            register:       antiguo
                             # Como sé si se ha encontrado el fingerprint:       len(fingerprint_registrado.stdout_lines) >= 3
                             # Algoritmo que se había registrado:                fingerprint_registrado.stdout_lines.1
                             # Valor del fingerprint:                            fingerprint_registrado.stdout_lines.2
@@ -42,14 +42,21 @@
             tags:    
                 -           KNOWN_HOSTS
 
+        -   name:           Proceso los valores antiguos del fingerprint del servidor
+            set_facts:
+                tengo_fingerprint_antiguo:         "{{ antiguo.stdout_lines | length >= 3 }}" # Devuelve True o False
+                algoritmo_antiguo:                 "{{ tengo_fingerprint_antiguo and antiguo.stdout_lines.1 or None }}" # Devuelve el nombre del algoritmo antiguo o None
+                fingerprint_antiguo:               "{{ tengo_fingerprint_antiguo and antiguo.stdout_lines.2 or None }}" # Devuelve el nombre del algoritmo antiguo o None
+
+
         -   name:           Conocer la huella de la maquina en la actualidad
             shell:
                 cmd:        >
                                 ssh-keyscan -H {{ ansible_host }} 2>/dev/null 
                                 | grep -e ^[^#] 
                                 | grep "{{ 
-                                fingerprint_registrado.stdout_lines | length >= 3 
-                                and fingerprint_registrado.stdout_lines.1
+                                tengo_fingerprint_antiguo 
+                                and algoritmo_antiguo
                                 or default_fingerprint_algorythm
                                 }}" 
                                 | sed 's/ /\n/g'
@@ -60,21 +67,32 @@
                             # En jinja:
                             #  condicion and valor se la condicion se cumple or valor si la condicion no se cumple
             changed_when:   false
-            register:       fingerprint_actual
+            register:       actual
                             # Cómo se si tengo un firgerprint para la máquina válido a día de hoy?
                             #                                                   len(fingerprint_actual.stdout_lines) >= 3
                             # Cual es el valor del fingerprint?                 fingerprint_actual.stdout_lines.2
             delegate_to:    localhost
             tags:    
                 -           KNOWN_HOSTS
-            
+
+
+        -   name:           Proceso los valores actuales del fingerprint del servidor
+            set_facts:
+                tengo_fingerprint_actual:          "{{ actual.stdout_lines | length >= 3 }}" # Devuelve True o False
+                id_fingerprint_actual:             "{{ tengo_fingerprint_actual and actual.stdout_lines.0 or None }}" # Devuelve el nombre del algoritmo antiguo o None
+                algoritmo_actual:                  "{{ tengo_fingerprint_actual and actual.stdout_lines.1 or default_fingerprint_algorythm }}" # Devuelve el nombre del algoritmo antiguo o None
+                fingerprint_actual:                "{{ tengo_fingerprint_actual and actual.stdout_lines.2 or None }}" # Devuelve el nombre del algoritmo antiguo o None
+
         # Qué pasa si no he conseguido un fingerprint válido actualizado? Eso significa que no encuentro el host... DEBO PETAR !!!!
         -   name:           Detener el playbook si no encuentro el host
             fail:           # Acaba el play con error pero solo para el host actual
                 msg:        |
                                 Error al obtener el fingerprint del entorno: {{ ansible_host }}.
                                 No se puede continuar.
-            when:           fingerprint_actual.stdout_lines | length < 3
+            when:           not tengo_fingerprint_actual            # fingerprint_actual.stdout_lines | length < 3
+            
+            
+            
             
         -   name:                   Operaciones sobre el fichero known_hosts
             block:
@@ -90,15 +108,15 @@
                         cmd:        "ssh-keygen -R {{ ansible_host}}"
                     delegate_to:    localhost
                     when:           
-                        -           fingerprint_registrado.stdout_lines | length >= 3           # Si había un fingerprint
+                        -           tengo_fingerprint_antiguo #fingerprint_registrado.stdout_lines | length >= 3           # Si había un fingerprint
                 
                 -   name:           Dar de alta el fingerprint en el fichero kwnon_hosts
                     shell:
                         cmd:
                                     >
-                                        echo  '{{ fingerprint_actual.stdout_lines.0 }}
-                                        {{ fingerprint_actual.stdout_lines.1 }}
-                                        {{ fingerprint_actual.stdout_lines.2 }}'
+                                        echo  '{{ id_fingerprint_actual }}
+                                        {{ algoritmo_actual }}
+                                        {{ fingerprint_actual }}'
                                         >> ~/.ssh/known_hosts
                     notify:         NUEVO_FINGERPRINT
                     delegate_to:    localhost
@@ -109,9 +127,9 @@
             tags:    
                 -                   KNOWN_HOSTS
             when:                   >
-                                        (fingerprint_registrado.stdout_lines | length < 3 and generate_finger_print_on_unknown) 
+                                        (not tengo_fingerprint_antiguo and generate_finger_print_on_unknown) 
                                             or 
-                                        (fingerprint_registrado.stdout_lines.2 != fingerprint_actual.stdout_lines.2 and regenerate_finger_print_on_changed == True)
+                                        (fingerprint_antiguo != fingerprint_actual and regenerate_finger_print_on_changed)
                             # Si antes no había fingerprint o si el fingerprint ha cambiado y hay que escribir el nuevo en el fichero
                 
     handlers:

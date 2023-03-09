@@ -1,0 +1,29 @@
+-   hosts:  localhost
+    gather_facts: false
+    
+    tasks:
+        -   name:               crear una variable con un valor
+            set_fact:           # Este módulo nos permite crear variables con contenido dinámico
+                variable1:      17
+                variable2:      true
+                variable3:
+                              - item1
+                              - item2
+                              - item3
+        -   name:               La gracia del set_facts, es que permite usar expresiones JINJA
+            set_fact:
+                variable4: |
+                                El valor de la var1 {{ variable1 }} y 
+                                por otro el de la variable 2 {{ variable2 }}
+                                
+        -   name:               consultar el valor de mis variables
+            block:
+                -   debug:
+                        var:    variable1
+                -   debug:
+                        var:    variable2
+                -   debug:
+                        var:    variable3
+                -   debug:
+                        var:    variable4
+
