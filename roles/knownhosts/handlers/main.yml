@@ -1,0 +1,4 @@
+-   name:                   Registrarlo en el log.
+    debug:
+        msg:                "Añadido nuevo fingerprint para el host: {{ ansible_host }}"    # Todo: Escribir en el archivo
+    listen:                 NUEVO_FINGERPRINT

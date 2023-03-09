@@ -1,0 +1,12 @@
+---
+- hosts: localhost
+  gather_facts: false
+  tasks:
+      -   name: Ejecutar el role
+          include_role: 
+              name: knownhosts
+          vars:
+            generate_finger_print_on_unknown:   True
+            regenerate_finger_print_on_changed: True
+            log_file:                           "./milog.txt"
+            default_fingerprint_algorythm:      ssh-ed25519

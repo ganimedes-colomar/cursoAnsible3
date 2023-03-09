@@ -1,0 +1,4 @@
+generate_finger_print_on_unknown:   False
+regenerate_finger_print_on_changed: False
+log_file:                           "./log.txt"
+default_fingerprint_algorythm:      ssh-rsa #ecdsa-sha2-nistp256 ssh-ed25519
