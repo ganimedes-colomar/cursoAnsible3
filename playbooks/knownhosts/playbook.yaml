@@ -12,3 +12,41 @@
 # Quiero un playbook que tenga las variables:
 # generate_finger_print_on_unknown: True
 # regenerate_finger_print_on_changed: False
+
+################################################################################################
+# Este playbook quiere dejar preparado el entorno local para poder contectarse con un remoto
+################################################################################################
+
+-   hosts:                  contenedores
+    gather_facts:           false
+    vars:
+        generate_finger_print_on_unknown:   True
+        regenerate_finger_print_on_changed: False
+        log_file:                           "./log.txt"
+        
+    tasks:
+        -   name:           Saber si tengo el host dado de alta en el known_hosts
+                            # Mirar en el fichero known_hosts y CAPTURAR LA SALIDA
+            register:       fingerprint_registrado
+            delegate_to:    localhost
+        
+        -   name:           Conocer la huella de la maquina en la actualidad
+            register:       fingerprint_actual
+            delegate_to:    localhost
+            
+        -   name:           Reemplazar el antiguo fingerprint por el actual en el known_hosts
+            delegate_to:    localhost
+            when:           
+                -           # Si los fingerprints no coinciden 
+                -           # y EXPLICITAMENTE ME PIDEN QUE LA REGERENE ESA SITUACION
+        
+        -   name:           Dar de alta el fingerprint en el fichero kwnon_hosts
+            delegate_to:    localhost
+            when:
+                -           # Si la máquina no está registrada actualmente
+                -           # Y EXPRESAMENTE ME PIDAN QUE DE DE ALTA LAS MAQUINAS NUEVAS 
+                
+                
+# $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit contenedor1 --extra-vars "regenerate_finger_print_on_changed=true"
+# $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --extra-vars "generate_finger_print_on_unknown=true"
+# $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit elasticsearch --extra-vars "generate_finger_print_on_unknown=true"
