@@ -1,0 +1,8 @@
+-   hosts:          contenedores
+    
+    gather_facts:   false
+    
+    tasks:
+        -   name:   Prueba de conexión
+            shell:
+                cmd:    echo "Hola contenedor"

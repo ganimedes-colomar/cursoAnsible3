@@ -1,0 +1,14 @@
+# ssh-keygen -F <IP>.  Ver si tengo un host (IP) dado de alta entre los reconocidos
+# ssh-keyscan -H <IP>. Ese me da las huellas del entorno usando distintos algoritmos de generación de huella:
+# - rsa
+# - ecdsa
+# - ed25519
+# ssh-keygen -R <IP>. Borra las entradas del host (IP) en el known_hosts
+
+# {{ ansible_facts }}   Es una variable propia de ansible.. siempre haga un gather_facts claro o use el modulo setup
+# {{ ansible_host }}    De cada host me da su cadena de conexión IP o fqdn, según se haya definido en el fichero de inventario
+
+# Y todo eso lo queremos parametrizar:
+# Quiero un playbook que tenga las variables:
+# generate_finger_print_on_unknown: True
+# regenerate_finger_print_on_changed: False
