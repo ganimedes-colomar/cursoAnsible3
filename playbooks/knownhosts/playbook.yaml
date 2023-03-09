@@ -24,7 +24,6 @@
         regenerate_finger_print_on_changed: False
         log_file:                           "./log.txt"
         default_fingerprint_algorythm:      ssh-rsa #ecdsa-sha2-nistp256 ssh-ed25519
-
         
     tasks:
         -   name:           Saber si tengo el host dado de alta en el known_hosts
