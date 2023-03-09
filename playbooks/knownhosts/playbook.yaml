@@ -30,8 +30,8 @@
             shell:
                 cmd:        >
                                 ssh-keygen -F {{ ansible_host }} 2>/dev/null 
-                                    | grep -e ^[^#] 
-                                    | sed 's/ /\n/g'                                     
+                                | grep -e ^[^#] 
+                                | sed 's/ /\n/g'                                     
                             # Mirar en el fichero known_hosts y CAPTURAR LA SALIDA
             changed_when:   false
             register:       fingerprint_registrado
@@ -43,38 +43,84 @@
                 -           KNOWN_HOSTS
 
         -   name:           Conocer la huella de la maquina en la actualidad
+            shell:
+                cmd:        >
+                                ssh-keyscan -H {{ ansible_host }} 2>/dev/null 
+                                | grep -e ^[^#] 
+                                | grep "{{ 
+                                fingerprint_registrado.stdout_lines | length >= 3 
+                                and fingerprint_registrado.stdout_lines.1
+                                or default_fingerprint_algorythm
+                                }}" 
+                                | sed 's/ /\n/g'
+                            # Si estoy usando ya un algoritmo para controlar esa máquina, uso el mismo algoritmo
+                            # Pero, si esa máquina aún lo la estoy controlando, usaré el algoritmo que me hayan indicado
+                            #  comando1  && se ejecuta si el primero va bien || se ejecuta si el primero va mal
+                            # Eso es sintaxis bash
+                            # En jinja:
+                            #  condicion and valor se la condicion se cumple or valor si la condicion no se cumple
+            changed_when:   false
             register:       fingerprint_actual
+                            # Cómo se si tengo un firgerprint para la máquina válido a día de hoy?
+                            #                                                   len(fingerprint_actual.stdout_lines) >= 3
+                            # Cual es el valor del fingerprint?                 fingerprint_actual.stdout_lines.2
             delegate_to:    localhost
             tags:    
                 -           KNOWN_HOSTS
             
-        -   name:           Copia de seguridad del known_hosts
-            when:           # Vaya a haber algun cambio
-            tags:    
-                -           KNOWN_HOSTS
-        
+        # Qué pasa si no he conseguido un fingerprint válido actualizado? Eso significa que no encuentro el host... DEBO PETAR !!!!
+        -   name:           Detener el playbook si no encuentro el host
+            fail:           # Acaba el play con error pero solo para el host actual
+                msg:        |
+                                Error al obtener el fingerprint del entorno: {{ ansible_host }}.
+                                No se puede continuar.
+            when:           fingerprint_actual.stdout_lines | length < 3
+            
         -   name:                   Operaciones sobre el fichero known_hosts
             block:
+                -   name:           Copia de seguridad del known_hosts
+                    archive:
+                        path:       ~/.ssh/known_hosts
+                        dest:       ~/.ssh/known_hosts-TIMESTAMP.tar
+                        format:     tar
+                    delegate_to:    localhost
+                        
                 -   name:           Eliminar el antiguo fingerprint del known_hosts
+                    shell:
+                        cmd:        "ssh-keygen -R {{ ansible_host}}"
                     delegate_to:    localhost
                     when:           
-                        -           # Si los fingerprints no coinciden 
-                        -           # y EXPLICITAMENTE ME PIDEN QUE LA REGERENE ESA SITUACION
+                        -           fingerprint_registrado.stdout_lines | length >= 3           # Si había un fingerprint
                 
                 -   name:           Dar de alta el fingerprint en el fichero kwnon_hosts
+                    shell:
+                        cmd:
+                                    >
+                                        echo  '{{ fingerprint_actual.stdout_lines.0 }}
+                                        {{ fingerprint_actual.stdout_lines.1 }}
+                                        {{ fingerprint_actual.stdout_lines.2 }}'
+                                        >> ~/.ssh/known_hosts
                     notify:         NUEVO_FINGERPRINT
                     delegate_to:    localhost
-                    when:
-                        -           # Si la máquina no está registrada actualmente Y EXPRESAMENTE ME PIDAN QUE DE DE ALTA LAS MAQUINAS NUEVAS 
-                                    # O si la maquina si está registrada, y no conincide los fingerprint y me piden que los regenere
             rescue:
                 -   name:           Restaurar la copia de seguridad
+                    debug:
+                        msg:        Restauro la copia anterior
             tags:    
                 -                   KNOWN_HOSTS
+            when:                   >
+                                        (fingerprint_registrado.stdout_lines | length < 3 and generate_finger_print_on_unknown) 
+                                            or 
+                                        (fingerprint_registrado.stdout_lines.2 != fingerprint_actual.stdout_lines.2 and regenerate_finger_print_on_changed == True)
+                            # Si antes no había fingerprint o si el fingerprint ha cambiado y hay que escribir el nuevo en el fichero
+                
     handlers:
-         -  name:   Registrarlo en el log. *****
-            listen: NUEVO_FINGERPRINT
+         -  name:                   Registrarlo en el log.
+            debug:
+                msg:                "Añadido nuevo fingerprint para el host: {{ ansible_host }}"
+            listen:                 NUEVO_FINGERPRINT
 
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit contenedor1 --extra-vars "regenerate_finger_print_on_changed=true"
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --extra-vars "generate_finger_print_on_unknown=true"
 # $ ansible-playbook -i INVENTARIO PLAYBOOK.yaml --limit elasticsearch --extra-vars "generate_finger_print_on_unknown=true"
+

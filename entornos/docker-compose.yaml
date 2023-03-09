@@ -8,7 +8,7 @@ services:
         image:          rastasheep/ubuntu-sshd
 
     entorno2:
-        container_name: entorno2
+        container_name: entorno22
         image:          rastasheep/ubuntu-sshd
         
     entorno3:
@@ -21,4 +21,8 @@ services:
         
     entorno5:
         container_name: entorno5
+        image:          rastasheep/ubuntu-sshd
+        
+    entorno6:
+        container_name: entorno66
         image:          rastasheep/ubuntu-sshd
