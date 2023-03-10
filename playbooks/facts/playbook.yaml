@@ -1,5 +1,5 @@
--   hosts:  localhost
-    gather_facts: false
+-   hosts:  contenedores
+    gather_facts: true
     
     tasks:
         -   name:               crear una variable con un valor
@@ -27,3 +27,45 @@
                 -   debug:
                         var:    variable4
 
+
+        -   name:               Asegurarme que tengo la carpeta para los custom facts
+            file:
+                path:           /etc/ansible/facts.d
+                state:          directory
+
+        -   name:               Asegurarme que tengo el custom fact de monitorizacion
+            copy:
+                src:            custom_facts/monitorizado.json
+                dest:           /etc/ansible/facts.d/monitorizado.fact
+                mode:           0644
+                
+#            001 Ejecucion -> 1
+#            010 Escritura -> 2
+#            100 Lectura   -> 4
+ 
+        -   debug:
+                var:            ansible_facts
+
+        -   debug:
+                var:            ansible_local                
+                
+        -   debug:
+                var:            ansible_facts.ansible_local                
+
+        -   name:               Vuelvo a cargar custom facts
+            setup:
+                gather_subset:
+                                - local
+
+        -   debug:
+                var:            ansible_facts.ansible_local                
+        
+        # En la práctica, no hacemos lo que hemos hecho en este ejemplo, más que si acaso para un TEST
+        # En la práctica tendré un playbook, que haga sus tareas, y genere un custom fact... para que otros playbooks
+        # puedan acceder a él
+                
+                
+                
+                
+                
+                
