@@ -39,6 +39,18 @@
                 dest:           /etc/ansible/facts.d/monitorizado.fact
                 mode:           0644
                 
+        -   name:               Asegurarme que tengo el custom fact de python
+            copy:
+                src:            custom_facts/programa.py
+                dest:           /etc/ansible/facts.d/python.fact
+                mode:           0744
+                
+        -   name:               Asegurarme que tengo el custom fact de bash
+            copy:
+                src:            custom_facts/programa.sh
+                dest:           /etc/ansible/facts.d/bash.fact
+                mode:           0744
+                
 #            001 Ejecucion -> 1
 #            010 Escritura -> 2
 #            100 Lectura   -> 4
