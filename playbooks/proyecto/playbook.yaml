@@ -1,7 +1,7 @@
 -
     hosts: all
     gather_facts: false
-    become: yes
+    become: true
     vars:
         mi_nombre: GANIMEDES
         ruta: /datos/
@@ -27,5 +27,6 @@
             name:       Comprobar que el archivo contiene mi nombre
             shell:
                 cmd:    "grep {{ mi_nombre }} {{ ruta }}{{ mi_nombre }}/mi_nombre.txt"
+            changed_when: false
             tags:
                 -       PRUEBA
