@@ -1,0 +1,31 @@
+-
+    hosts: all
+    gather_facts: false
+    become: yes
+    vars:
+        mi_nombre: GANIMEDES
+        ruta: /datos/
+    
+    tasks:
+        -
+            name:       Asegurar que hay una carpeta con mi nombre
+            file:
+                path:   "{{ ruta }}{{ mi_nombre }}"
+                state:  directory
+                mode:   0777
+            tags:
+                -       GENERARFICHERO
+        -
+            name:       Asegurar que hay un fichero con mi nombre
+            template:
+                src:    templates/mi_nombre.txt
+                dest:   "{{ ruta }}{{ mi_nombre }}/mi_nombre.txt"
+                mode:   0644
+            tags:
+                -       GENERARFICHERO
+        -
+            name:       Comprobar que el archivo contiene mi nombre
+            shell:
+                cmd:    "grep {{ mi_nombre }} {{ ruta }}{{ mi_nombre }}/mi_nombre.txt"
+            tags:
+                -       PRUEBA
