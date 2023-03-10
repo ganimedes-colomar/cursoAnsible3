@@ -50,17 +50,24 @@ capacidad de orquestar playbooks => Y ESTO ES MUY VALIOSO
 Me llega un servidor (físico o virtual) nuevo.
 Y quiero ponerle un nginx... a funcionar!
 
+
 Lo quiero gestionar con Ansible?
 
-- Darlo de alta en el known_hosts desde donde vaya a ejecutar ansible
-- Lo que hicimos en el playbook que instalaba el nginx y un app.
-- Quiero monitorizar esa máquina? Le quiero montar un agente de monitorización? Pues claro
-- La quiero registrar en el CMDB? SIP
 - Con que usuario voya. instalar el nginx? usuario: TOWER
 - Usuario TOWER que se contectará a la máquina mediante una clave ssh.... que habrá que dejar allí
+- Darlo de alta en el known_hosts desde donde vaya a ejecutar ansible
+
 - Y le voy a configruar la red?
+
 - En la máquina pondré una determinada policita de actualización de paquetes... y haré actualziaciones con una periodicidad
+
 - Si la máquina es RHEL ->SELinux
+
+- Quiero monitorizar esa máquina? Le quiero montar un agente de monitorización? Pues claro
+
+- La quiero registrar en el CMDB? SIP
+
+- Lo que hicimos en el playbook que instalaba el nginx y un app.
 
 
 TODO ESO LO METO EN UN PLAYBOOK UNICO? Ni de broma.
